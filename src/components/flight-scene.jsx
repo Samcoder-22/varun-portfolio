@@ -68,39 +68,86 @@ function createShip() {
 }
 
 function createStarfield() {
-  const starGeometry = new THREE.BufferGeometry();
-  const starPositions = [];
-
-  for (let index = 0; index < 5500; index += 1) {
-    starPositions.push(
-      (Math.random() - 0.5) * 2800,
-      (Math.random() - 0.5) * 1800,
-      (Math.random() - 0.5) * 2800
-    );
-  }
-
-  starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
-
-  return new THREE.Points(
-    starGeometry,
-    new THREE.PointsMaterial({
+  const starfield = new THREE.Group();
+  const layers = [
+    {
+      count: 3600,
+      spreadX: 3200,
+      spreadY: 1800,
+      spreadZ: 3400,
+      size: 0.95,
+      opacity: 0.5,
+      color: 0xaadfff,
+    },
+    {
+      count: 2200,
+      spreadX: 2400,
+      spreadY: 1500,
+      spreadZ: 2600,
+      size: 1.6,
+      opacity: 0.78,
       color: 0xffffff,
-      size: 1.35,
-      transparent: true,
-      opacity: 0.92,
-    })
-  );
+    },
+    {
+      count: 700,
+      spreadX: 1400,
+      spreadY: 900,
+      spreadZ: 1800,
+      size: 2.4,
+      opacity: 0.95,
+      color: 0xe6fbff,
+    },
+  ];
+
+  layers.forEach((layer, index) => {
+    const starGeometry = new THREE.BufferGeometry();
+    const starPositions = [];
+
+    for (let starIndex = 0; starIndex < layer.count; starIndex += 1) {
+      starPositions.push(
+        (Math.random() - 0.5) * layer.spreadX,
+        (Math.random() - 0.5) * layer.spreadY,
+        (Math.random() - 0.5) * layer.spreadZ
+      );
+    }
+
+    starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+
+    const starLayer = new THREE.Points(
+      starGeometry,
+      new THREE.PointsMaterial({
+        color: layer.color,
+        size: layer.size,
+        transparent: true,
+        opacity: layer.opacity,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+
+    starLayer.userData.rotationSpeed = 0.00008 + index * 0.00005;
+    starLayer.userData.driftOffset = Math.random() * Math.PI * 2;
+    starLayer.position.y = (index - 1) * 2.5;
+    starfield.add(starLayer);
+  });
+
+  return starfield;
 }
 
 export default function FlightScene({ launchToken, isActive }) {
   const canvasRef = useRef(null);
-  const sceneRef = useRef(null);
   const rendererRef = useRef(null);
   const cameraRef = useRef(null);
   const shipRef = useRef(null);
   const starsRef = useRef(null);
   const frameRef = useRef(0);
   const launchStartedAtRef = useRef(null);
+  const scrollStateRef = useRef({
+    lastY: 0,
+    lastTime: 0,
+    velocity: 0,
+    drift: 0,
+  });
   const launchConfigRef = useRef({
     startY: 10,
     endY: 2,
@@ -137,11 +184,12 @@ export default function FlightScene({ launchToken, isActive }) {
     scene.add(stars);
     scene.add(ship);
 
-    sceneRef.current = scene;
     rendererRef.current = renderer;
     cameraRef.current = camera;
     shipRef.current = ship;
     starsRef.current = stars;
+    scrollStateRef.current.lastY = window.scrollY;
+    scrollStateRef.current.lastTime = performance.now();
 
     const clock = new THREE.Clock();
 
@@ -169,11 +217,41 @@ export default function FlightScene({ launchToken, isActive }) {
       shipObject.rotation.y = Math.sin(time * 0.3) * 0.08;
     }
 
+    function updateScrollDrift() {
+      const now = performance.now();
+      const deltaTime = Math.max(now - scrollStateRef.current.lastTime, 16);
+      const currentY = window.scrollY;
+      const deltaY = currentY - scrollStateRef.current.lastY;
+      const targetVelocity = clamp(deltaY / deltaTime, -2.4, 2.4);
+
+      scrollStateRef.current.velocity += (targetVelocity - scrollStateRef.current.velocity) * 0.22;
+      scrollStateRef.current.drift = scrollStateRef.current.velocity * 1.3;
+      scrollStateRef.current.lastY = currentY;
+      scrollStateRef.current.lastTime = now;
+    }
+
     function animate() {
       const elapsed = clock.getElapsedTime();
+      updateScrollDrift();
 
       if (starsRef.current) {
-        starsRef.current.rotation.y += 0.00018;
+        starsRef.current.children.forEach((layer, index) => {
+          layer.position.x -= 0.03 + index * 0.014;
+          layer.position.y += scrollStateRef.current.drift * (0.55 + index * 0.1);
+
+          if (layer.position.x < -1200) {
+            layer.position.x = 1200;
+          }
+
+          if (layer.position.y < -180) {
+            layer.position.y = 180;
+          } else if (layer.position.y > 180) {
+            layer.position.y = -180;
+          }
+
+          layer.rotation.y += layer.userData.rotationSpeed;
+          layer.rotation.x = Math.sin(elapsed * (0.04 + index * 0.015) + layer.userData.driftOffset) * 0.02;
+        });
       }
 
       updateShip(elapsed);
@@ -198,7 +276,7 @@ export default function FlightScene({ launchToken, isActive }) {
     return () => {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frameRef.current);
-      starGeometryDispose(stars);
+      disposeStarfield(stars);
       ship.traverse((object) => {
         if (object.geometry) {
           object.geometry.dispose();
@@ -262,12 +340,14 @@ export default function FlightScene({ launchToken, isActive }) {
   );
 }
 
-function starGeometryDispose(stars) {
-  if (stars.geometry) {
-    stars.geometry.dispose();
-  }
+function disposeStarfield(starfield) {
+  starfield.children.forEach((layer) => {
+    if (layer.geometry) {
+      layer.geometry.dispose();
+    }
 
-  if (stars.material) {
-    stars.material.dispose();
-  }
+    if (layer.material) {
+      layer.material.dispose();
+    }
+  });
 }
