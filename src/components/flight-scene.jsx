@@ -3,6 +3,24 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
+const WARM_STAR_COLORS = [
+  "#ffb46b",
+  "#ffc184",
+  "#ffc78f",
+  "#ffcc99",
+  "#ffd1a3",
+  "#ffd5ad",
+];
+
+const COOL_STAR_COLORS = [
+  "#fff5f5",
+  "#f0f1ff",
+  "#e6ebff",
+  "#d8e3ff",
+  "#c6d8ff",
+  "#b7ceff",
+];
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -16,6 +34,53 @@ function easeOutBack(t) {
   const c3 = c1 + 1;
 
   return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+function pickRandom(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function pickWeightedStarColor(layerIndex) {
+  const warmChanceByLayer = [0.72, 0.42, 0.68];
+
+  return Math.random() < warmChanceByLayer[layerIndex]
+    ? pickRandom(WARM_STAR_COLORS)
+    : pickRandom(COOL_STAR_COLORS);
+}
+
+function createCircleTexture() {
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = size;
+  canvas.height = size;
+
+  if (!context) {
+    return null;
+  }
+
+  const gradient = context.createRadialGradient(
+    size / 2,
+    size / 2,
+    0,
+    size / 2,
+    size / 2,
+    size / 2
+  );
+
+  gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+  gradient.addColorStop(0.45, "rgba(255, 255, 255, 0.95)");
+  gradient.addColorStop(0.72, "rgba(255, 255, 255, 0.35)");
+  gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+
+  return texture;
 }
 
 function createShip() {
@@ -67,7 +132,7 @@ function createShip() {
   return ship;
 }
 
-function createStarfield() {
+function createStarfield(circleTexture) {
   const starfield = new THREE.Group();
   const layers = [
     {
@@ -77,7 +142,6 @@ function createStarfield() {
       spreadZ: 3400,
       size: 0.95,
       opacity: 0.5,
-      color: 0xaadfff,
     },
     {
       count: 2200,
@@ -86,7 +150,6 @@ function createStarfield() {
       spreadZ: 2600,
       size: 1.6,
       opacity: 0.78,
-      color: 0xffffff,
     },
     {
       count: 700,
@@ -95,13 +158,13 @@ function createStarfield() {
       spreadZ: 1800,
       size: 2.4,
       opacity: 0.95,
-      color: 0xe6fbff,
     },
   ];
 
   layers.forEach((layer, index) => {
     const starGeometry = new THREE.BufferGeometry();
     const starPositions = [];
+    const starColors = [];
 
     for (let starIndex = 0; starIndex < layer.count; starIndex += 1) {
       starPositions.push(
@@ -109,19 +172,25 @@ function createStarfield() {
         (Math.random() - 0.5) * layer.spreadY,
         (Math.random() - 0.5) * layer.spreadZ
       );
+
+      const color = new THREE.Color(pickWeightedStarColor(index));
+      starColors.push(color.r, color.g, color.b);
     }
 
     starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute("color", new THREE.Float32BufferAttribute(starColors, 3));
 
     const starLayer = new THREE.Points(
       starGeometry,
       new THREE.PointsMaterial({
-        color: layer.color,
         size: layer.size,
         transparent: true,
         opacity: layer.opacity,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
+        vertexColors: true,
+        map: circleTexture,
+        alphaMap: circleTexture,
       })
     );
 
@@ -179,7 +248,8 @@ export default function FlightScene({ launchToken, isActive }) {
     scene.add(ambientLight, rimLight);
 
     const ship = createShip();
-    const stars = createStarfield();
+    const circleTexture = createCircleTexture();
+    const stars = createStarfield(circleTexture);
 
     scene.add(stars);
     scene.add(ship);
@@ -277,6 +347,9 @@ export default function FlightScene({ launchToken, isActive }) {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frameRef.current);
       disposeStarfield(stars);
+      if (circleTexture) {
+        circleTexture.dispose();
+      }
       ship.traverse((object) => {
         if (object.geometry) {
           object.geometry.dispose();
