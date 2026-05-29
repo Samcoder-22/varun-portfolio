@@ -23,6 +23,15 @@ function getPlanetTexture(textureType, color) {
       repeating-linear-gradient(0deg, transparent 0 18px, rgba(255, 255, 255, 0.08) 18px 19px),
       repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.08) 18px 19px)
     `,
+    bands: `
+      radial-gradient(circle at 34% 28%, ${glow} 0%, ${color} 38%, ${shadow} 78%, #1f1710 100%),
+      repeating-linear-gradient(
+        10deg,
+        rgba(121, 92, 59, 0.52) 0 18px,
+        rgba(237, 223, 190, 0.18) 18px 32px,
+        rgba(92, 68, 44, 0.4) 32px 48px
+      )
+    `,
   };
 
   return textures[textureType] ?? textures.rings;
@@ -46,7 +55,7 @@ function ProjectMedia({ title, thumbnailUrl, videoUrl }) {
         <button
           type="button"
           onClick={() => setIsPlaying(true)}
-          className="group relative h-full w-full"
+          className="group relative h-full w-full cursor-pointer"
           aria-label={`Play video for ${title}`}
         >
           <Image
@@ -57,17 +66,15 @@ function ProjectMedia({ title, thumbnailUrl, videoUrl }) {
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
           />
           <span className="absolute inset-0 bg-black/45" />
-          <span className="absolute inset-x-6 bottom-6 flex items-center justify-between gap-4 rounded-2xl border border-white/12 bg-black/55 px-5 py-4 text-left backdrop-blur-sm">
-            <span>
-              <span className="block text-sm uppercase tracking-[0.2em] text-primary/80">
-                Project video
-              </span>
-              <span className="mt-1 block text-base font-medium text-white">
-                Click to play
-              </span>
-            </span>
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-lg font-semibold text-black">
-              Play
+          <span className="absolute inset-x-0 bottom-6 flex justify-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/65 text-primary backdrop-blur-sm transition group-hover:bg-black/75">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="ml-0.5 h-6 w-6 fill-current"
+              >
+                <path d="M8 6.5v11l9-5.5-9-5.5Z" />
+              </svg>
             </span>
           </span>
         </button>
@@ -77,6 +84,7 @@ function ProjectMedia({ title, thumbnailUrl, videoUrl }) {
 }
 
 function ProjectSection({
+  id,
   title,
   brief,
   thumbnailUrl,
@@ -86,18 +94,24 @@ function ProjectSection({
   textureType,
   isPlanetLeft,
 }) {
+  const planetDiameter = planetSize * 2;
+  const mobilePlanetDiameter = Math.max(160, Math.floor(planetDiameter * 0.42));
+
   return (
-    <section className="relative isolate flex min-h-dvh items-center overflow-hidden bg-background px-6 py-12 sm:px-8 lg:px-12">
+    <section
+      id={id}
+      className="relative isolate flex min-h-dvh items-center overflow-hidden bg-background px-6 py-12 sm:px-8 lg:px-12"
+    >
       <div
-        className={`pointer-events-none absolute top-1/2 hidden -translate-y-1/2 lg:block ${
-          isPlanetLeft ? "-left-24" : "-right-24"
-        }`}
+        className="pointer-events-none absolute top-1/2 hidden -translate-y-1/2 lg:block"
         style={{
-          width: `${planetSize}px`,
-          height: `${planetSize}px`,
+          width: `${planetDiameter}px`,
+          height: `${planetDiameter}px`,
+          left: isPlanetLeft ? `calc(-6rem - ${planetSize / 2}px)` : "auto",
+          right: isPlanetLeft ? "auto" : `calc(-6rem - ${planetSize / 2}px)`,
           borderRadius: "9999px",
           backgroundImage: getPlanetTexture(textureType, planetColor),
-          boxShadow: `0 0 80px color-mix(in srgb, ${planetColor} 28%, transparent)`,
+          boxShadow: `0 0 120px color-mix(in srgb, ${planetColor} 28%, transparent)`,
         }}
         aria-hidden="true"
       />
@@ -106,8 +120,8 @@ function ProjectSection({
         <div
           className="opacity-70"
           style={{
-            width: `${Math.max(120, Math.floor(planetSize * 0.42))}px`,
-            height: `${Math.max(120, Math.floor(planetSize * 0.42))}px`,
+            width: `${mobilePlanetDiameter}px`,
+            height: `${mobilePlanetDiameter}px`,
             borderRadius: "9999px",
             backgroundImage: getPlanetTexture(textureType, planetColor),
             boxShadow: `0 0 40px color-mix(in srgb, ${planetColor} 24%, transparent)`,
@@ -116,25 +130,36 @@ function ProjectSection({
       </div>
 
       <div className="relative mx-auto grid w-full max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(360px,1.15fr)] lg:items-center lg:gap-16">
-        <div className="pt-28 lg:pt-0">
-          <div className="max-w-2xl">
-            <p className="mb-4 text-xs uppercase tracking-[0.28em] text-primary/75">
-              Featured project
-            </p>
-            <h2 className="max-w-xl text-4xl font-semibold text-white sm:text-5xl">
+        <div
+          className={`pt-28 lg:pt-0 ${
+            isPlanetLeft ? "lg:order-1 lg:text-left" : "lg:order-2 lg:text-right"
+          }`}
+        >
+          <div className={`max-w-2xl ${isPlanetLeft ? "" : "lg:ml-auto"}`}>
+            <h2
+              className={`font-heading text-4xl font-semibold text-white [text-shadow:0_4px_18px_rgba(0,0,0,0.9)] sm:text-5xl ${
+                isPlanetLeft ? "max-w-xl" : "max-w-xl lg:ml-auto"
+              }`}
+            >
               {title}
             </h2>
-            <p className="mt-5 max-w-xl text-base leading-7 text-white/72 sm:text-lg">
+            <p
+              className={`mt-5 text-base leading-7 text-white/80 [text-shadow:0_2px_16px_rgba(0,0,0,0.92)] sm:text-lg ${
+                isPlanetLeft ? "max-w-xl" : "max-w-xl lg:ml-auto"
+              }`}
+            >
               {brief}
             </p>
           </div>
         </div>
 
-        <ProjectMedia
-          title={title}
-          thumbnailUrl={thumbnailUrl}
-          videoUrl={videoUrl}
-        />
+        <div className={isPlanetLeft ? "lg:order-2" : "lg:order-1"}>
+          <ProjectMedia
+            title={title}
+            thumbnailUrl={thumbnailUrl}
+            videoUrl={videoUrl}
+          />
+        </div>
       </div>
     </section>
   );
