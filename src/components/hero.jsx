@@ -3,21 +3,21 @@
 import { motion } from "framer-motion";
 
 const particles = [
-  { size: 2, top: "12%", left: "10%", delay: "0s", duration: "6s" },
-  { size: 3, top: "22%", left: "76%", delay: "1.1s", duration: "7.5s" },
-  { size: 2, top: "68%", left: "18%", delay: "2.2s", duration: "6.8s" },
-  { size: 4, top: "58%", left: "82%", delay: "0.7s", duration: "8.5s" },
-  { size: 2, top: "38%", left: "52%", delay: "1.8s", duration: "5.8s" },
-  { size: 3, top: "80%", left: "62%", delay: "2.8s", duration: "9s" },
-  { size: 2, top: "30%", left: "28%", delay: "0.4s", duration: "7.2s" },
-  { size: 4, top: "14%", left: "58%", delay: "2.5s", duration: "8.2s" },
-  { size: 2, top: "74%", left: "88%", delay: "1.5s", duration: "6.4s" },
-  { size: 3, top: "50%", left: "8%", delay: "3s", duration: "7.8s" },
+  // { size: 2, top: "12%", left: "10%", delay: "0s", duration: "6s" },
+  // { size: 3, top: "22%", left: "76%", delay: "1.1s", duration: "7.5s" },
+  // { size: 2, top: "68%", left: "18%", delay: "2.2s", duration: "6.8s" },
+  // { size: 4, top: "58%", left: "82%", delay: "0.7s", duration: "8.5s" },
+  // { size: 2, top: "38%", left: "52%", delay: "1.8s", duration: "5.8s" },
+  // { size: 3, top: "80%", left: "62%", delay: "2.8s", duration: "9s" },
+  // { size: 2, top: "30%", left: "28%", delay: "0.4s", duration: "7.2s" },
+  // { size: 4, top: "14%", left: "58%", delay: "2.5s", duration: "8.2s" },
+  // { size: 2, top: "74%", left: "88%", delay: "1.5s", duration: "6.4s" },
+  // { size: 3, top: "50%", left: "8%", delay: "3s", duration: "7.8s" },
 ];
 
 export default function Hero({ onExplore, isExploring = false }) {
   return (
-    <section className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background px-6 py-12 text-center sm:px-8">
+    <section className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-transparent px-6 py-12 text-center sm:px-8">
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         <motion.div
           className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(20,184,212,0.12)_0%,rgba(0,0,0,0)_45%)]"

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import FlightScene from "@/components/flight-scene";
 import Hero from "@/components/hero";
 import ProjectsShowcase from "@/components/projects-showcase";
 import { projects } from "@/data/projects";
@@ -41,6 +42,7 @@ function animateScrollTo(targetY, duration) {
 
 export default function Home() {
   const [isExploring, setIsExploring] = useState(false);
+  const [launchToken, setLaunchToken] = useState(0);
   const hasActiveSequence = useRef(false);
 
   async function handleExplore() {
@@ -50,6 +52,7 @@ export default function Home() {
 
     hasActiveSequence.current = true;
     setIsExploring(true);
+    setLaunchToken((current) => current + 1);
 
     try {
       const firstProject = document.getElementById(projects[0].id);
@@ -71,8 +74,11 @@ export default function Home() {
 
   return (
     <main>
-      <Hero onExplore={handleExplore} isExploring={isExploring} />
-      <ProjectsShowcase projects={projects} />
+      <FlightScene launchToken={launchToken} isActive={isExploring} />
+      <div className="relative z-10">
+        <Hero onExplore={handleExplore} isExploring={isExploring} />
+        <ProjectsShowcase projects={projects} />
+      </div>
     </main>
   );
 }

@@ -100,7 +100,7 @@ function ProjectSection({
   return (
     <section
       id={id}
-      className="relative isolate flex min-h-dvh items-center overflow-hidden bg-background px-6 py-12 sm:px-8 lg:px-12"
+      className="relative isolate flex min-h-dvh items-center overflow-hidden bg-transparent px-6 py-12 sm:px-8 lg:px-12"
     >
       <div
         className="pointer-events-none absolute top-1/2 hidden -translate-y-1/2 lg:block"
