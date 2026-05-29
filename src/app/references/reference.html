@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V2S Labs | Interstellar Command</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+        :root {
+            --cyan: #00d4ff;
+            --blue: #1e90ff;
+            --bg: #000000;
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+            scrollbar-width: none;
+        }
+        body::-webkit-scrollbar { display: none; }
+
+        #viewport {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* --- LOGO RECREATION --- */
+        .logo-wrap {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .logo-v2s {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(5rem, 15vw, 10rem);
+            font-weight: 900;
+            letter-spacing: 15px;
+            background: linear-gradient(135deg, #fff 0%, var(--cyan) 50%, var(--blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 2;
+        }
+
+        .orbital-ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 120%; height: 60%;
+            border: 2px solid var(--cyan);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) rotateX(70deg) rotateZ(-20deg);
+            box-shadow: 0 0 20px var(--cyan);
+            z-index: 1;
+        }
+
+        /* --- UI OVERLAY --- */
+        .overlay { position: relative; z-index: 10; width: 100%; }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .tagline {
+            font-family: 'Orbitron';
+            letter-spacing: 15px;
+            color: var(--cyan);
+            font-size: 1.1rem;
+            margin-bottom: 50px;
+            text-transform: uppercase;
+        }
+
+        .btn-launch {
+            padding: 18px 50px;
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: #fff;
+            font-family: 'Orbitron';
+            letter-spacing: 5px;
+            cursor: pointer;
+            transition: 0.5s;
+            pointer-events: all;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-launch:hover {
+            background: var(--cyan);
+            color: #000;
+            box-shadow: 0 0 50px var(--cyan);
+            transform: translateY(-5px);
+        }
+
+        /* CONTENT JOURNEY */
+        #journey-wrap { display: none; }
+
+        .mission-step {
+            height: 150vh; /* Spread out for better scroll control */
+            display: flex;
+            align-items: center;
+            padding: 0 10%;
+        }
+
+        .mission-step.right { justify-content: flex-end; }
+
+        .glass-card {
+            width: 480px;
+            padding: 50px;
+            background: var(--glass);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid var(--cyan);
+            opacity: 0;
+            transform: translateY(100px);
+            transition: 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .mission-step.right .glass-card { border-left: none; border-right: 4px solid var(--blue); }
+        .glass-card.active { opacity: 1; transform: translateY(0); }
+
+        h2 { font-family: 'Orbitron'; color: var(--cyan); font-size: 2.2rem; margin-bottom: 20px; }
+        p { font-size: 1.2rem; line-height: 1.8; color: #ccc; }
+
+        /* FOOTER */
+        .footer {
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to top, #000, transparent);
+            text-align: center;
+        }
+
+        .credits {
+            font-family: 'Orbitron';
+            font-size: 0.9rem;
+            color: #555;
+            letter-spacing: 5px;
+            line-height: 3;
+        }
+        .credits b { color: var(--cyan); }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="viewport"></canvas>
+
+    <div class="overlay">
+        <!-- Hero Section -->
+        <section class="hero" id="hero-sec">
+            <div class="logo-wrap">
+                <div class="orbital-ring"></div>
+                <h1 class="logo-v2s">V2S</h1>
+            </div>
+            <p class="tagline">LABS • INNOVATE • EXPLORE</p>
+            <button class="btn-launch" onclick="launchMission()">ENGAGE DESCENT</button>
+        </section>
+
+        <!-- Scrolling Mission -->
+        <div id="journey-wrap">
+            <div class="mission-step">
+                <div class="glass-card">
+                    <h2>01. Robotics</h2>
+                    <p>Building high-end autonomous systems for deep-space exploration. Our Interceptor series robots manage critical flight logic.</p>
+                </div>
+            </div>
+
+            <div class="mission-step right">
+                <div class="glass-card">
+                    <h2>02. AI & Automation</h2>
+                    <p>The neural engine of V2S. Advanced automation that thinks ahead of the mission trajectory.</p>
+                </div>
+            </div>
+
+            <div class="mission-step">
+                <div class="glass-card">
+                    <h2>03. Space Tech</h2>
+                    <p>Propulsion systems built for the long haul. Engineering the warp-capable hardware of tomorrow.</p>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="credits">
+                    DESIGNED BY <b></b><br>
+                    SYSTEM INTERFACE: ALPHA V7.2<br>
+                    © 2024 V2S LABS MISSION COMMAND
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * V2S ADVANCED INTERCEPTOR ENGINE
+         */
+        
+        let scene, camera, renderer, ship, starfield, blackHole, galaxy, asteroids;
+        const clock = new THREE.Clock();
+
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 10000);
+            
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('viewport'),
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // HIGH CONTRAST LIGHTING
+            const ambient = new THREE.AmbientLight(0xffffff, 0.1);
+            scene.add(ambient);
+            
+            // Rim Light (Makes ship pop from black)
+            const rimLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            rimLight.position.set(10, 10, 10);
+            scene.add(rimLight);
+
+            createStarship();
+            createEnvironment();
+
+            camera.position.z = 25;
+            camera.position.y = 5;
+        }
+
+        // 1. STAR WARS STYLE STARSHIP (Custom Geometry)
+        function createStarship() {
+            ship = new THREE.Group();
+            const hullMat = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a1a, 
+                metalness: 1, 
+                roughness: 0.2,
+                emissive: 0x00d4ff,
+                emissiveIntensity: 0.05
+            });
+            const neonMat = new THREE.MeshBasicMaterial({ color: 0x00d4ff });
+
+            // Main Tapered Hull
+            const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 1.2, 8, 4), hullMat);
+            ship.add(hull);
+
+            // Layered Wings (Star Destroyer Style)
+            const wingGeo = new THREE.BoxGeometry(7, 0.2, 4);
+            const wingL = new THREE.Mesh(wingGeo, hullMat);
+            wingL.position.set(-2, -1, 1);
+            wingL.rotation.y = 0.4;
+            ship.add(wingL);
+
+            const wingR = wingL.clone();
+            wingR.position.x = 2;
+            wingR.rotation.y = -0.4;
+            ship.add(wingR);
+
+            // Detailed Bridge/Cockpit
+            const bridge = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 1), hullMat);
+            bridge.position.y = -1.5; bridge.position.z = 0.5;
+            ship.add(bridge);
+
+            // Ion Engines (Glowing blue)
+            const engineGeo = new THREE.CylinderGeometry(0.5, 0.2, 1, 16);
+            const engL = new THREE.Mesh(engineGeo, neonMat);
+            engL.position.set(-1.2, -4, 0);
+            ship.add(engL);
+            const engR = engL.clone(); engR.position.x = 1.2;
+            ship.add(engR);
+
+            // Engine PointLight (Self-illumination)
+            const engineLight = new THREE.PointLight(0x00d4ff, 5, 10);
+            engineLight.position.set(0, -5, 0);
+            ship.add(engineLight);
+
+            ship.rotation.x = Math.PI; // Nose Down
+            ship.position.y = 10;
+            ship.scale.set(0,0,0);
+            scene.add(ship);
+        }
+
+        // 2. SPACE ENVIRONMENT
+        function createEnvironment() {
+            // Starfield
+            const starGeo = new THREE.BufferGeometry();
+            const starPos = [];
+            for(let i=0; i<15000; i++) {
+                starPos.push((Math.random()-0.5)*6000, (Math.random()-0.5)*6000, (Math.random()-0.5)*6000);
+            }
+            starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+            starfield = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 1.2}));
+            scene.add(starfield);
+
+            // Black Hole (The Sinkhole)
+            const bh = new THREE.Group();
+            const core = new THREE.Mesh(new THREE.SphereGeometry(15, 32, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
+            bh.add(core);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(25, 0.5, 2, 100), new THREE.MeshBasicMaterial({color: 0x444444, transparent: true, opacity: 0.5}));
+            ring.rotation.x = Math.PI / 2.2;
+            bh.add(ring);
+            bh.position.set(80, -300, -200);
+            blackHole = bh;
+            scene.add(blackHole);
+
+            // Galaxy Spiral
+            const galGeo = new THREE.TorusGeometry(100, 40, 2, 100);
+            galaxy = new THREE.Mesh(galGeo, new THREE.MeshBasicMaterial({color: 0x111111, wireframe: true, transparent: true, opacity: 0.1}));
+            galaxy.position.set(-100, -600, -300);
+            scene.add(galaxy);
+        }
+
+        // 3. MISSION CONTROL: SCROLL LOGIC
+        function launchMission() {
+            gsap.to("#hero-sec", { opacity: 0, duration: 1, onComplete: () => {
+                document.getElementById('hero-sec').style.display = 'none';
+                document.getElementById('journey-wrap').style.display = 'block';
+                
+                // Ship Warp Entrance
+                gsap.to(ship.scale, { x: 1, y: 1, z: 1, duration: 1.5, ease: "back.out(1.5)" });
+                gsap.to(ship.position, { y: 2, duration: 2 });
+                
+                initScroll();
+            }});
+        }
+
+        function initScroll() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Automatic Gentle Scroll
+            const autoScroll = () => {
+                window.scrollBy(0, 1.2);
+                if ((window.innerHeight + window.scrollY) < document.body.offsetHeight) {
+                    requestAnimationFrame(autoScroll);
+                }
+            };
+            autoScroll();
+
+            // Link Ship to Scroll
+            gsap.to(ship.position, {
+                scrollTrigger: { trigger: "body", start: "top top", end: "bottom bottom", scrub: 1 },
+                y: -1000
+            });
+
+            // Camera movement
+            gsap.to(camera.position, {
+                scrollTrigger: { trigger: "body", start: "top top", end: "bottom bottom", scrub: 1.5 },
+                y: -1000,
+                z: 40 // Move back slowly to see more galaxy
+            });
+
+            // Reveal content cards
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach(card => {
+                ScrollTrigger.create({
+                    trigger: card,
+                    start: "top 70%",
+                    onEnter: () => card.classList.add('active')
+                });
+            });
+        }
+
+        function animate() {
+            const time = clock.getElapsedTime();
+            requestAnimationFrame(animate);
+
+            if(starfield) starfield.rotation.y += 0.0001;
+            if(blackHole) blackHole.rotation.z += 0.005;
+            if(galaxy) galaxy.rotation.z += 0.001;
+
+            // Ship Flight Motion (Slight wobble & tilt)
+            if(ship) {
+                ship.position.x += Math.sin(time) * 0.01;
+                ship.rotation.z = Math.sin(time * 0.5) * 0.05;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init3D();
+        animate();
+
+    </script>
+</body>
+</html>

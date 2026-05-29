@@ -55,17 +55,20 @@ export default function Hero({ onExplore, isExploring = false }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9, ease: "easeOut" }}
       >
-        <motion.h1
-          className="font-heading bg-linear-[135deg,var(--color-primary)_0%,color-mix(in_srgb,var(--color-primary)_8%,transparent)_100%] bg-clip-text text-5xl font-black tracking-[0.18em] text-transparent sm:text-6xl md:text-8xl"
+        <motion.div
+          className="hero-title-lockup"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
         >
-          V2S LABS
-        </motion.h1>
+          <span className="hero-title-capsule" aria-hidden="true" />
+          <h1 className="hero-title-text font-heading bg-linear-[135deg,#d0f7ff_0%,#61d6f2_38%,#1f9fff_100%] bg-clip-text text-5xl font-black tracking-[0.18em] text-transparent sm:text-6xl md:text-8xl">
+            V2S LABS
+          </h1>
+        </motion.div>
 
         <motion.p
-          className="max-w-2xl text-base font-bold tracking-wider text-white/75 sm:text-lg md:text-xl"
+          className="max-w-2xl mt-8 text-base font-bold tracking-wider text-white/75 sm:text-lg md:text-xl"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.28, ease: "easeOut" }}
@@ -77,7 +80,7 @@ export default function Hero({ onExplore, isExploring = false }) {
           type="button"
           onClick={onExplore}
           disabled={isExploring}
-          className="mt-2 inline-flex min-h-14 cursor-pointer items-center justify-center rounded-xl bg-primary px-8 text-base font-bold tracking-wider text-black transition-colors hover:bg-white disabled:cursor-not-allowed sm:px-10 sm:text-lg"
+          className="mt-10 inline-flex min-h-14 cursor-pointer items-center justify-center rounded-xl bg-primary px-8 text-base font-bold tracking-wider text-black transition-colors hover:bg-white disabled:cursor-not-allowed sm:px-10 sm:text-lg"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.38, ease: "easeOut" }}
