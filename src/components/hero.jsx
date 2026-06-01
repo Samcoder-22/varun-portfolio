@@ -62,10 +62,15 @@ export default function Hero({ onExplore, isExploring = false }) {
           transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
         >
           <span className="hero-title-capsule" aria-hidden="true" />
-          <h1 className="hero-title-text font-heading bg-linear-[135deg,#d0f7ff_0%,#61d6f2_38%,#1f9fff_100%] bg-clip-text text-5xl font-black tracking-[0.18em] text-transparent sm:text-6xl md:text-8xl">
-            V2S LABS
+          <h1 className="hero-title-text font-heading">
+            <span className="hero-title-main" aria-label="V2S">
+              <span className="hero-title-v">V</span>
+              <span className="hero-title-two">2</span>
+              <span className="hero-title-s">S</span>
+            </span>
           </h1>
         </motion.div>
+            <span className="hero-title-sub">labs</span>
 
         <motion.p
           className="max-w-2xl mt-8 text-base font-bold tracking-wider text-white/75 sm:text-lg md:text-xl"
