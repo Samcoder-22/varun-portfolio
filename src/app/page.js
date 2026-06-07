@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import FlightScene from "@/components/flight-scene";
+import Footer from "@/components/footer";
 import Hero from "@/components/hero";
 import ProjectsShowcase from "@/components/projects-showcase";
 import { projects } from "@/data/projects";
@@ -42,17 +43,51 @@ function animateScrollTo(targetY, duration) {
 
 export default function Home() {
   const [isExploring, setIsExploring] = useState(false);
-  const [launchToken, setLaunchToken] = useState(0);
+  const [launchState, setLaunchState] = useState(null);
   const hasActiveSequence = useRef(false);
 
-  async function handleExplore() {
+  useEffect(() => {
+    let frame = 0;
+
+    function updateBackgroundOffset() {
+      const scrollRange = Math.max(document.body.scrollHeight - window.innerHeight, 1);
+      const scrollProgress = Math.min(window.scrollY / scrollRange, 1);
+      const yOffset = scrollProgress * 10;
+
+      document.body.style.setProperty("--page-bg-offset-y", `${yOffset.toFixed(2)}px`);
+      frame = 0;
+    }
+
+    function handleScroll() {
+      if (frame !== 0) {
+        return;
+      }
+
+      frame = window.requestAnimationFrame(updateBackgroundOffset);
+    }
+
+    updateBackgroundOffset();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+
+      if (frame !== 0) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
+  }, []);
+
+  async function handleExplore(event) {
     if (hasActiveSequence.current || projects.length === 0) {
       return;
     }
 
     hasActiveSequence.current = true;
     setIsExploring(true);
-    setLaunchToken((current) => current + 1);
+    setLaunchState((current) => ({
+      token: (current?.token ?? 0) + 1,
+    }));
 
     try {
       const firstProject = document.getElementById(projects[0].id);
@@ -62,6 +97,7 @@ export default function Home() {
         return;
       }
 
+      await wait(2300);
       await animateScrollTo(firstProject.offsetTop, 1200);
       await wait(2000);
 
@@ -73,11 +109,13 @@ export default function Home() {
   }
 
   return (
-    <main>
-      <FlightScene launchToken={launchToken} isActive={isExploring} />
+    <main className="relative">
+      <div className="page-background-layer" aria-hidden="true" />
+      <FlightScene launchState={launchState} isActive={isExploring} />
       <div className="relative z-10">
         <Hero onExplore={handleExplore} isExploring={isExploring} />
         <ProjectsShowcase projects={projects} />
+        <Footer />
       </div>
     </main>
   );

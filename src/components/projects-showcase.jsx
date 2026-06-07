@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import Link from "next/link";
 
 function getPlanetTexture(textureType, color) {
   const glow = `color-mix(in srgb, ${color} 28%, white)`;
@@ -37,48 +37,34 @@ function getPlanetTexture(textureType, color) {
   return textures[textureType] ?? textures.rings;
 }
 
-function ProjectMedia({ title, thumbnailUrl, videoUrl }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-
+function ProjectMedia({ id, title, thumbnailUrl }) {
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-white/12 bg-white/5 shadow-[0_0_40px_rgba(20,184,212,0.12)]">
-      {isPlaying ? (
-        <iframe
-          title={title}
-          src={videoUrl}
-          className="h-full w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          referrerPolicy="strict-origin-when-cross-origin"
-          allowFullScreen
+      <Link
+        href={`/projects/${id}`}
+        className="group relative block h-full w-full cursor-pointer"
+        aria-label={`Open project page for ${title}`}
+      >
+        <Image
+          src={thumbnailUrl}
+          alt={`${title} thumbnail`}
+          fill
+          sizes="(min-width: 1024px) 56vw, 100vw"
+          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
         />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setIsPlaying(true)}
-          className="group relative h-full w-full cursor-pointer"
-          aria-label={`Play video for ${title}`}
-        >
-          <Image
-            src={thumbnailUrl}
-            alt={`${title} thumbnail`}
-            fill
-            sizes="(min-width: 1024px) 56vw, 100vw"
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-          />
-          <span className="absolute inset-0 bg-black/45" />
-          <span className="absolute inset-x-0 bottom-6 flex justify-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/65 text-primary backdrop-blur-sm transition group-hover:bg-black/75">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="ml-0.5 h-6 w-6 fill-current"
-              >
-                <path d="M8 6.5v11l9-5.5-9-5.5Z" />
-              </svg>
-            </span>
+        <span className="absolute inset-0 bg-black/45" />
+        <span className="absolute inset-x-0 bottom-6 flex justify-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-black/65 text-primary backdrop-blur-sm transition group-hover:bg-black/75">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="ml-0.5 h-6 w-6 fill-current"
+            >
+              <path d="M8 6.5v11l9-5.5-9-5.5Z" />
+            </svg>
           </span>
-        </button>
-      )}
+        </span>
+      </Link>
     </div>
   );
 }
@@ -88,7 +74,6 @@ function ProjectSection({
   title,
   brief,
   thumbnailUrl,
-  videoUrl,
   planetColor,
   planetSize,
   textureType,
@@ -155,9 +140,9 @@ function ProjectSection({
 
         <div className={isPlanetLeft ? "lg:order-2" : "lg:order-1"}>
           <ProjectMedia
+            id={id}
             title={title}
             thumbnailUrl={thumbnailUrl}
-            videoUrl={videoUrl}
           />
         </div>
       </div>

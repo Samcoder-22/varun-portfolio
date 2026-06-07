@@ -61,16 +61,34 @@ export default function Hero({ onExplore, isExploring = false }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
         >
-          <span className="hero-title-capsule" aria-hidden="true" />
+          <span className="hero-title-capsule" aria-hidden="true">
+            <motion.span
+              className="hero-title-orb"
+              initial={{ opacity: 0, scale: 0.72 }}
+              animate={{
+                opacity: [0.8, 1, 0.82],
+                scale: [0.96, 1.08, 0.98],
+              }}
+              transition={{
+                duration: 3.4,
+                delay: 0.4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <span className="hero-title-orb-core" />
+              <span className="hero-title-orb-twinkle" />
+            </motion.span>
+          </span>
           <h1 className="hero-title-text font-heading">
             <span className="hero-title-main" aria-label="V2S">
               <span className="hero-title-v">V</span>
               <span className="hero-title-two">2</span>
               <span className="hero-title-s">S</span>
             </span>
+            <span className="hero-title-sub">labs</span>
           </h1>
         </motion.div>
-            <span className="hero-title-sub">labs</span>
 
         <motion.p
           className="max-w-2xl mt-8 text-base font-bold tracking-wider text-white/75 sm:text-lg md:text-xl"
@@ -85,14 +103,14 @@ export default function Hero({ onExplore, isExploring = false }) {
           type="button"
           onClick={onExplore}
           disabled={isExploring}
-          className="mt-10 inline-flex min-h-14 cursor-pointer items-center justify-center rounded-xl bg-primary px-8 text-base font-bold tracking-wider text-black transition-colors hover:bg-white disabled:cursor-not-allowed sm:px-10 sm:text-lg"
+          className="mt-10 inline-flex min-h-14 cursor-pointer items-center justify-center rounded-sm bg-primary px-8 text-base font-bold tracking-wider text-black transition-colors hover:bg-white disabled:cursor-not-allowed sm:px-10 sm:text-lg hover:shadow-[0_0px_30px_rgb(255,255,255)]"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.38, ease: "easeOut" }}
-          whileHover={isExploring ? undefined : { scale: 1.03, y: -2 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          whileHover={isExploring ? undefined : { scale: 1.2, y: -2 }}
           whileTap={isExploring ? undefined : { scale: 0.98 }}
         >
-          Explore now
+          EXPLORE NOW
         </motion.button>
       </motion.div>
     </section>

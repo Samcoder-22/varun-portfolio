@@ -25,15 +25,15 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
 function easeOutBack(t) {
   const c1 = 1.70158;
   const c3 = c1 + 1;
 
   return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 function pickRandom(items) {
@@ -203,7 +203,7 @@ function createStarfield(circleTexture) {
   return starfield;
 }
 
-export default function FlightScene({ launchToken, isActive }) {
+export default function FlightScene({ launchState, isActive }) {
   const canvasRef = useRef(null);
   const rendererRef = useRef(null);
   const cameraRef = useRef(null);
@@ -211,19 +211,16 @@ export default function FlightScene({ launchToken, isActive }) {
   const starsRef = useRef(null);
   const frameRef = useRef(0);
   const launchStartedAtRef = useRef(null);
+  const exitStartedAtRef = useRef(null);
+  const exitFromRef = useRef(null);
+  const launchPathRef = useRef(null);
   const scrollStateRef = useRef({
     lastY: 0,
     lastTime: 0,
     velocity: 0,
     drift: 0,
   });
-  const launchConfigRef = useRef({
-    startY: 10,
-    endY: 2,
-    startX: 0,
-    startZ: 0,
-    endScale: 0.42,
-  });
+  const launchConfigRef = useRef(null);
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -264,27 +261,56 @@ export default function FlightScene({ launchToken, isActive }) {
     const clock = new THREE.Clock();
 
     function updateShip(time) {
-      if (!shipRef.current || launchStartedAtRef.current == null) {
+      if (
+        !shipRef.current ||
+        launchStartedAtRef.current == null ||
+        !launchConfigRef.current ||
+        !launchPathRef.current
+      ) {
         return;
       }
 
       const shipObject = shipRef.current;
-      const { startY, endY, startX, startZ, endScale } = launchConfigRef.current;
+      const { endScale, driftScale, cruiseDepth } = launchConfigRef.current;
       const launchElapsed = (performance.now() - launchStartedAtRef.current) / 1000;
-      const entranceProgress = clamp(launchElapsed / 1.6, 0, 1);
-      const entranceScale = endScale * easeOutBack(entranceProgress);
-      const entranceY = startY + (endY - startY) * easeOutCubic(entranceProgress);
+      const entranceProgress = clamp(launchElapsed / 1.75, 0, 1);
       const documentHeight = Math.max(document.body.scrollHeight - window.innerHeight, 1);
       const scrollProgress = clamp(window.scrollY / documentHeight, 0, 1);
-      const driftOffset = scrollProgress * 20;
+      const driftOffset = scrollProgress * driftScale;
+      const scaleProgress = entranceProgress < 0.78
+        ? easeOutBack(clamp(entranceProgress / 0.78, 0, 1))
+        : 1;
+      const pathProgress = easeInOutCubic(entranceProgress);
+      const pathPoint = launchPathRef.current.getPointAt(pathProgress);
 
       shipObject.visible = true;
-      shipObject.scale.setScalar(Math.max(entranceScale, 0.001));
-      shipObject.position.x = startX + Math.sin(time * 0.85) * 0.38;
-      shipObject.position.y = entranceY - driftOffset;
-      shipObject.position.z = startZ - scrollProgress * 4;
-      shipObject.rotation.z = Math.sin(time * 0.55) * 0.04;
-      shipObject.rotation.y = Math.sin(time * 0.3) * 0.08;
+      shipObject.scale.setScalar(Math.max(endScale * scaleProgress, 0.001));
+      if (exitStartedAtRef.current != null && exitFromRef.current) {
+        const exitProgress = clamp((performance.now() - exitStartedAtRef.current) / 1000 / 1.25, 0, 1);
+        const exitEase = easeInOutCubic(exitProgress);
+        shipObject.position.set(
+          exitFromRef.current.x,
+          exitFromRef.current.y - 16 * exitEase,
+          exitFromRef.current.z + 4.5 * exitEase
+        );
+
+        if (exitProgress >= 1) {
+          shipObject.visible = false;
+          launchStartedAtRef.current = null;
+          exitStartedAtRef.current = null;
+          exitFromRef.current = null;
+        }
+      } else {
+        shipObject.position.set(
+          pathPoint.x,
+          pathPoint.y - driftOffset,
+          pathPoint.z - scrollProgress * cruiseDepth
+        );
+      }
+
+      shipObject.rotation.x = Math.PI;
+      shipObject.rotation.y = 0;
+      shipObject.rotation.z = 0;
     }
 
     function updateScrollDrift() {
@@ -367,41 +393,48 @@ export default function FlightScene({ launchToken, isActive }) {
   }, []);
 
   useEffect(() => {
-    if (!shipRef.current || launchToken === 0) {
+    if (!shipRef.current || !launchState?.token) {
       return;
     }
 
     const isMobile = window.innerWidth < 768;
-    const startX = isMobile ? 1.1 : 2.6;
-    const startY = isMobile ? 7.2 : 8.2;
-    const startZ = isMobile ? -10 : -8;
-    const endY = isMobile ? 1.2 : 1.6;
-    const endScale = isMobile ? 0.28 : 0.38;
+    const startZ = isMobile ? -8.7 : -7.7;
+    const startPoint = new THREE.Vector3(0, isMobile ? 16.5 : 19, startZ);
+    const midPoint = new THREE.Vector3(isMobile ? -0.45 : -0.6, isMobile ? 11.8 : 13.2, startZ - 0.2);
+    const endPoint = new THREE.Vector3(isMobile ? -1.3 : -1.7, isMobile ? 7.2 : 8.6, startZ - 0.45);
+
+    launchPathRef.current = new THREE.CatmullRomCurve3([
+      startPoint.clone(),
+      midPoint.clone(),
+      endPoint.clone(),
+    ]);
+    launchPathRef.current.curveType = "chordal";
+    launchPathRef.current.tension = 0;
 
     shipRef.current.visible = true;
-    shipRef.current.position.set(startX, startY, startZ);
+    shipRef.current.position.copy(startPoint);
     shipRef.current.scale.setScalar(0.001);
     launchConfigRef.current = {
-      startX,
-      startY,
-      startZ,
-      endY,
-      endScale,
+      endScale: isMobile ? 0.28 : 0.38,
+      driftScale: isMobile ? 12 : 16,
+      cruiseDepth: isMobile ? 2.4 : 3.1,
     };
     launchStartedAtRef.current = performance.now();
-  }, [launchToken]);
+    exitStartedAtRef.current = null;
+    exitFromRef.current = null;
+  }, [launchState]);
 
   useEffect(() => {
     if (isActive || !shipRef.current) {
       return;
     }
 
-    window.setTimeout(() => {
-      if (shipRef.current) {
-        shipRef.current.visible = false;
-      }
-      launchStartedAtRef.current = null;
-    }, 1200);
+    if (!shipRef.current.visible || launchStartedAtRef.current == null) {
+      return;
+    }
+
+    exitFromRef.current = shipRef.current.position.clone();
+    exitStartedAtRef.current = performance.now();
   }, [isActive]);
 
   return (
